@@ -1,17 +1,16 @@
-
+#include <ESP8266HTTPClient.h>
+#include <WiFiClientSecureBearSSL.h>
 #include "esphome.h"
 using namespace esphome;
 
-#include <ESP8266HTTPClient.h>
-#include <WiFiClientSecureBearSSL.h>
-
-const uint8_t _fingerprint[20] = {0x5A, 0xCF, 0xFE, 0xF0, 0xF1, 0xA6, 0xF4, 0x5F, 0xD2, 0x11, 0x11, 0xC6, 0x1D, 0x2F, 0x0E, 0xBC, 0x39, 0x8D, 0x50, 0xE0};
+const uint8_t _fingerprint[20] = {0x3B, 0x5C, 0x64, 0x35, 0xF5, 0x28, 0xBF, 0x1C, 0xFA, 0x96, 0xDC, 0xE7, 0x65, 0xB1, 0xE1, 0xB3, 0x2E, 0x84, 0x35, 0x77};
 
 // namespace is called 'switch_' because 'switch' is a reserved keyword
 class FreeSMS : public Component, public switch_::Switch {
  public:
  
   FreeSMS(const String &user, const String &pass, const String &msg){
+	  //Build url
     _url = "https://smsapi.free-mobile.fr/sendmsg?user="+user+"&pass="+pass+"&msg="+msg;
   }
   
@@ -22,14 +21,11 @@ class FreeSMS : public Component, public switch_::Switch {
     if(state)
     {
       HTTPClient https;
-      BearSSL::WiFiClientSecure client;
-      
-      client.setFingerprint(_fingerprint);
-      if(https.begin(client, _url))
+      if(https.begin(_url, _fingerprint))
       {
         int httpCode = https.GET();
         if (httpCode < 0) {
-          ESP_LOGW("FreeSMS", "HTTPS ERROR : %s", https.errorToString(httpCode).c_str());
+          ESP_LOGW("FreeSMS", "HTTPS ERROR : %d", httpCode);
         }
         https.end();
       }
