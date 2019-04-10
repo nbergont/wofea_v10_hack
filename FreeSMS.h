@@ -1,17 +1,15 @@
-#include <ESP8266HTTPClient.h>
-#include <WiFiClientSecureBearSSL.h>
+
+#include <WiFiClientSecure.h>
 #include "esphome.h"
 using namespace esphome;
 
-const uint8_t _fingerprint[20] = {0x3B, 0x5C, 0x64, 0x35, 0xF5, 0x28, 0xBF, 0x1C, 0xFA, 0x96, 0xDC, 0xE7, 0x65, 0xB1, 0xE1, 0xB3, 0x2E, 0x84, 0x35, 0x77};
-
-// namespace is called 'switch_' because 'switch' is a reserved keyword
+// ESPHOME free SMS notifier component
 class FreeSMS : public Component, public switch_::Switch {
  public:
  
   FreeSMS(const String &user, const String &pass, const String &msg){
-	  //Build url
-    _url = "https://smsapi.free-mobile.fr/sendmsg?user="+user+"&pass="+pass+"&msg="+msg;
+    //Build url
+    _url = "/sendmsg?user="+user+"&pass="+pass+"&msg="+msg;
   }
   
   void setup() override{
@@ -20,15 +18,27 @@ class FreeSMS : public Component, public switch_::Switch {
   void write_state(bool state) override {
     if(state)
     {
-      HTTPClient https;
-      if(https.begin(_url, _fingerprint))
-      {
-        int httpCode = https.GET();
-        if (httpCode < 0) {
-          ESP_LOGW("FreeSMS", "HTTPS ERROR : %d", httpCode);
-        }
-        https.end();
+      const char* fingerprint = "3B 5C 64 35 F5 28 BF 1C FA 96 DC E7 65 B1 E1 B3 2E 84 35 77";
+      const char* host = "smsapi.free-mobile.fr";
+      WiFiClientSecure client;
+      
+      if (!client.connect(host, 443)) {
+         ESP_LOGW("FreeSMS", "connection failed");
       }
+      
+      if (!client.verify(fingerprint, host)){
+        ESP_LOGW("FreeSMS", "certificate doesn't match");
+      }
+      
+      client.print(String("GET ") + _url + " HTTP/1.1\r\n" +
+               "Host: " + host + "\r\n" +
+               "User-Agent: ESP8266\r\n" +
+               "Connection: close\r\n\r\n");
+      
+      if (!client.connected()){
+        ESP_LOGW("FreeSMS", "connection error");
+      }
+      
     }
     publish_state(false);
   }

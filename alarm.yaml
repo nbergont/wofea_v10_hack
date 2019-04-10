@@ -1,36 +1,64 @@
-esphomeyaml:
+substitutions:
+  PIR1_CODE:  '000000000000000000000001'
+  PIR1_LABEL: 'PIR 1'
+  
+  PIR2_CODE:  '000000000000000000000010'
+  PIR2_LABEL: 'PIR 2'
+  
+  PIR3_CODE:  '000000000000000000000011'
+  PIR3_LABEL: 'PIR 3'
+  
+  CONTACT1_CODE:  '000000000000000000000100'
+  CONTACT1_LABEL: 'Door 1'
+  
+  CONTACT2_CODE:  '000000000000000000000101'
+  CONTACT2_LABEL: 'Door 2'
+  
+  CONTACT3_CODE:  '000000000000000000000110'
+  CONTACT3_LABEL: 'Door 3'
+  
+  CONTACT4_CODE:  '000000000000000000000111'
+  CONTACT4_LABEL: 'Door 4'
+  
+  CONTACT5_CODE:  '000000000000000000001000'
+  CONTACT5_LABEL: 'Door 5'
+
+  REMOTE1_DISARM: '000000000000000000001001'
+  REMOTE1_ARM:    '000000000000000000001010'
+  REMOTE2_DISARM: '000000000000000000001011'
+  REMOTE2_ARM:    '000000000000000000001100'
+                
+  RF_SEND_SIREN_DISARM: '000000000000000000001101'
+  RF_SEND_SIREN_ARM:    '000000000000000000001110'
+  RF_SEND_SIREN_START : '000000000000000000001111'
+
+esphome:
   name: alarm
   platform: ESP8266
   board: esp12e
+  # Useful in case of power cut
+  esp8266_restore_from_flash: True
+  includes:
+    - FreeSMS.h
   
 wifi:
   ssid: 'SSID'
-  password: 'xxxx'
+  password: 'XXXXXXX'
 
 # Enable logging
 logger:
+  level: WARN
 
 # Enable Home Assistant API
 api:
-  reboot_timeout: 0s
-  
+
+# Enable OTA
 ota:
 
 status_led:
-  pin:
+  pin: 
     number: GPIO0
     inverted: True
-
-# output:
-#   - platform: gpio
-#     pin: GPIO3
-#     id: wired_siren
-#   - platform: gpio
-#     pin: GPIO2
-#     id: led2_blue
-#   - platform: gpio
-#     pin: GPIO15
-#     id: led2_red
 
 remote_transmitter:
   pin: GPIO4
@@ -38,27 +66,54 @@ remote_transmitter:
   
 remote_receiver:
   pin: GPIO5
-  #dump: rc_switch
-  filter : 200us
+  #dump: raw
+  filter : 250us
+  tolerance: 30
   
 script:
   - id: alarm_detection
     then:
       - if:
           condition:
-            switch.is_on: alarm_status
+            switch.is_on: alarm_state
           then:
-            - switch.turn_on: wired_siren
-            - switch.turn_on: start_siren_ext
+              # Switch siren on only once
+            - if:
+                condition:
+                  switch.is_off: wired_siren
+                then:
+                  - switch.turn_on: wired_siren
+                  - switch.turn_on: start_siren_ext
+                  - delay: 2s
+                  - switch.turn_on: sms_alert
           else:
-            - switch.turn_on: led2_blue
+            # Detection : blue Led blink
+            - output.turn_on: led2_blue
             - delay: 2s
-            - switch.turn_off: led2_blue
+            - output.turn_off: led2_blue
+
+output:
+  - platform: gpio
+    pin: 
+      number: GPIO2
+      inverted: True
+    id: led2_blue
+    
+  - platform: gpio
+    pin: 
+      number: GPIO15
+      inverted: True
+    id: led2_red
+    
+  - platform: gpio
+    pin: GPIO3
+    id: wired_siren_gpio
+
+sensor:
+  - platform: uptime
+    name: Alarm uptime
 
 binary_sensor:
-  - platform: status
-    name: "Alarm Status"
-
   - platform: gpio
     name: "Reset button"
     pin: 
@@ -66,110 +121,227 @@ binary_sensor:
       inverted: True
     filters:
       - delayed_on: 10ms
+      
+  - platform: remote_receiver
+    name: $PIR1_LABEL
+    device_class: motion
+    rc_switch_raw:
+      code: $PIR1_CODE
+      protocol:
+        pulse_length: 385
+    filters:
+       - delayed_off: 2s
+    on_press:
+      then:
+        - script.execute: alarm_detection
+       
+  - platform: remote_receiver
+    name: $PIR2_LABEL
+    device_class: motion
+    rc_switch_raw:
+      code: $PIR2_CODE
+      protocol:
+        pulse_length: 385
+    filters:
+       - delayed_off: 2s
+    on_press:
+      then:
+        - script.execute: alarm_detection
+       
+  - platform: remote_receiver
+    name: $PIR3_LABEL
+    device_class: motion
+    rc_switch_raw:
+      code: $PIR3_CODE
+      protocol:
+        pulse_length: 385
+    filters:
+       - delayed_off: 2s
+    on_press:
+      then:
+        - script.execute: alarm_detection
+       
+  - platform: remote_receiver
+    name: $CONTACT1_LABEL
+    device_class: motion
+    rc_switch_raw:
+      code: $CONTACT1_CODE
+      protocol:
+        pulse_length: 433
+    filters:
+       - delayed_off: 2s
+    on_press:
+      then:
+        - script.execute: alarm_detection
+       
+  - platform: remote_receiver
+    name: $CONTACT2_LABEL
+    device_class: motion
+    rc_switch_raw:
+      code: $CONTACT2_CODE
+      protocol:
+        pulse_length: 433
+    filters:
+       - delayed_off: 2s
+    on_press:
+      then:
+        - script.execute: alarm_detection
+       
+  - platform: remote_receiver
+    name: $CONTACT3_LABEL
+    device_class: motion
+    rc_switch_raw:
+      code: $CONTACT3_CODE
+      protocol:
+        pulse_length: 433
+    filters:
+       - delayed_off: 2s
+    on_press:
+      then:
+        - script.execute: alarm_detection
+       
+  - platform: remote_receiver
+    name: $CONTACT4_LABEL
+    device_class: motion
+    rc_switch_raw:
+      code: $CONTACT4_CODE
+      protocol:
+        pulse_length: 433
+    filters:
+       - delayed_off: 2s
+    on_press:
+      then:
+        - script.execute: alarm_detection
+        
+  - platform: remote_receiver
+    name: $CONTACT5_LABEL
+    device_class: motion
+    rc_switch_raw:
+      code: $CONTACT5_CODE
+      protocol:
+        pulse_length: 433
+    filters:
+       - delayed_off: 2s
+    on_press:
+      then:
+        - script.execute: alarm_detection
+    
+        
+  - platform: remote_receiver
+    name: "Remote disarm 1"
+    rc_switch_raw:
+      code: $REMOTE1_DISARM
+      protocol: 
+        pulse_length: 325
+    filters:
+      - delayed_off: 2s
+    on_press:
+      then:
+        - switch.turn_off: alarm_state
+        
+  - platform: remote_receiver
+    name: "Remote disarm 2"
+    rc_switch_raw:
+      code: $REMOTE2_DISARM
+      protocol: 
+        pulse_length: 325
+    filters:
+      - delayed_off: 2s
+    on_press:
+      then:
+        - switch.turn_off: alarm_state
+        
+  - platform: remote_receiver
+    name: "Remote arm 1"
+    rc_switch_raw:
+      code: $REMOTE1_ARM
+      protocol: 
+        pulse_length: 325
+    filters:
+      - delayed_off: 2s
+    on_press:
+      then:
+        - switch.turn_on: alarm_state
+        
+  - platform: remote_receiver
+    name: "Remote arm 2"
+    rc_switch_raw:
+      code: $REMOTE2_ARM
+      protocol: 
+        pulse_length: 325
+    filters:
+      - delayed_off: 2s
+    on_press:
+      then:
+        - switch.turn_on: alarm_state
 
-  - platform: remote_receiver
-    name: "PIR Entree"
-    device_class: motion
-    rc_switch_raw:
-      code: '010101010101010101010101'
-    filters:
-       - delayed_off: 2s
-    on_press:
-      then:
-        - script.execute: alarm_detection
-        
-  - platform: remote_receiver
-    name: "PIR Salon"
-    device_class: motion
-    rc_switch_raw:
-      code: '010101010101010101010101'
-    filters:
-       - delayed_off: 2s
-    on_press:
-      then:
-        - script.execute: alarm_detection
-        
-  - platform: remote_receiver
-    name: "PIR Test"
-    device_class: motion
-    rc_switch_raw:
-      code: '010101010101010101010101'
-    filters:
-       - delayed_off: 2s
-    on_press:
-      then:
-        - script.execute: alarm_detection
-        
-  - platform: remote_receiver
-    name: "DOOR Entree"
-    device_class: motion
-    rc_switch_raw:
-      code: '010101010101010101010101'
-    filters:
-       - delayed_off: 2s
-    on_press:
-      then:
-        - script.execute: alarm_detection
-  
 switch:
   - platform: remote_transmitter
-    name: "Disarm siren ext"
+    name: "Disarm ext siren"
     id : disarm_siren_ext
     icon: "mdi:volume-off"
-    repeat : 3
+    repeat : 10
     rc_switch_raw:
-      code: '010101010101010101010101'
-
+      code: $RF_SEND_SIREN_DISARM
+      protocol: 1
+      
   - platform: remote_transmitter
-    name: "Arm siren ext"
+    name: "Arm ext siren"
     id : arm_siren_ext
     icon: "mdi:volume-low"
-    repeat : 3
+    repeat : 10
     rc_switch_raw:
-      code: '010101010101010101010101'
-
-  - platform: remote_transmitter
-    name: "Start siren ext"
-    id : start_siren_ext
-    icon: "mdi:volume-high"
-    repeat : 3
-    rc_switch_raw:
-      code: '010101010101010101010101'
+      code: $RF_SEND_SIREN_ARM
       protocol: 1
 
-  - platform: gpio
-    name: "Wired siren"
-    icon: "mdi:volume-plus"
-    pin: 
-      number: GPIO3
-      inverted: True
-    id: wired_siren
+  - platform: remote_transmitter
+    name: "Start ext siren"
+    id : start_siren_ext
+    icon: "mdi:volume-high"
+    repeat : 10
+    rc_switch_raw:
+      code: $RF_SEND_SIREN_START
+      protocol: 1
 
-  - platform: gpio
-    name: "Led blue"
-    icon: "mdi:led-off"
-    pin: 
-      number: GPIO2
-      inverted: True
-    id: led2_blue
-
-  - platform: gpio
-    name: "Led red"
-    icon: "mdi:led-off"
-    pin: 
-      number: GPIO15
-      inverted: True
-    id: led2_red
-
+    # Global alarm switch
   - platform: template
-    name: "Alarm switch"
-    id : alarm_status
+    name: "Alarm state"
+    id : alarm_state
     icon : "mdi:home-lock"
     optimistic: True
+    restore_state: True
     turn_on_action:
-      - switch.turn_on: led2_red
+      - output.turn_on: led2_red
+      - delay: 1s
       - switch.turn_on: arm_siren_ext
     turn_off_action:
-      - switch.turn_off: led2_red
-      - switch.turn_on: disarm_siren_ext
+      - output.turn_off: led2_red
       - switch.turn_off: wired_siren
+      - delay: 1s
+      - switch.turn_on: disarm_siren_ext
+  
+  - platform: template
+    name: "Wired siren"
+    id : wired_siren
+    icon : "mdi:volume-plus"
+    optimistic: True
+    restore_state: True
+    turn_on_action:
+      - output.turn_on: wired_siren_gpio
+      # Siren max duration
+      - delay: 5min
+      - output.turn_off: wired_siren_gpio
+    turn_off_action:
+      - output.turn_off: wired_siren_gpio
+
+    # Free SMS alert
+  - platform: custom
+    lambda: |-
+      auto my_custom_switch = new FreeSMS("free_id", "free_sms_pwd", "HOME ALARM !");
+      App.register_component(my_custom_switch);
+      return {my_custom_switch};
+    switches:
+      name: "SMS Alert"
+      icon: "mdi:message-text-outline"
+      id: sms_alert
+    
