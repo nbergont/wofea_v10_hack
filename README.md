@@ -25,7 +25,7 @@ Objective of this project is to create a custom and open source firmware based o
     - pulse lenght : 325 us
 
 ## Internal ESP8266 Pin
-![esp8622](esp8622.jpg)
+![esp8266 pin](esp8266.jpg)
 - GPIO5 : RF receiver
 - GPIO4 : RF transmiter
 - GPIO0 : Status led 2 (RED)
@@ -34,9 +34,11 @@ Objective of this project is to create a custom and open source firmware based o
 - GPIO16 : Reset button
 - GPIO14, GPIO12, GPIO13 : Audio output (probably I2S protocol or pwm audio)
 
+Wofea board :
+![wofea_hw](wofea_hw.jpg) 
+
 ## Extract original firmware
-- Solder connector on P1
-- Pin from label P1 : GND, TX, RX, VCC (3.3V)
+- Solder serial connector (see picture)
 - Connect GND on IO0 (boot loader mode)
 - Turn device on (with usb power)
 - Run : 
@@ -44,8 +46,7 @@ Objective of this project is to create a custom and open source firmware based o
 - Dont use crappy usb to serial like [Prolific PL2303HX](https://vilimpoc.org/blog/.../esptool-usb-serial-adapter-shootout/)
 
 ## Flash ESPHOME firmware
-- Solder connector on P1
-- Pin from label P1 : GND, TX, RX, VCC (3.3V)
+- Solder serial connector (see picture)
 - Connect GND on IO0 (boot loader mode)
 - Turn device on (with usb power)
 - Run : 
