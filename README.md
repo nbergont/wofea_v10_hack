@@ -27,6 +27,7 @@ Objective of this project is to create a custom and open source firmware based o
     - pulse lenght : 325 us
 
 ## Internal ESP8266 Pin
+
 <img src="esp8266.jpg" alt="drawing" width="300"/>
 
 - GPIO5 : RF receiver
@@ -38,6 +39,7 @@ Objective of this project is to create a custom and open source firmware based o
 - GPIO14, GPIO12, GPIO13 : Audio output (probably I2S protocol or pwm audio)
 
 Wofea board :
+
 <img src="wofea_hw.jpg" alt="drawing" width="600"/>
 
 ## Extract original firmware
