@@ -3,6 +3,8 @@
 [WOFEA V10 Wifi](https://wofea.fr.aliexpress.com/store/group/V10-Wifi-alarm/902213_513571047.html?spm=a2g0w.12010612.0.0.19cf6442fpjjrc) is a chinese low cost alarm system based on ESP8266.
 Objective of this project is to create a custom and open source firmware based on [esphome](https://esphome.io/) and [Home Assistant](https://www.home-assistant.io/) ! 
 
+<img src="screenshot.png" alt="drawing" width="300"/>
+
 ## Hardware
 - WOFEA V10 Base:
     - ESP8266 4M
@@ -25,7 +27,8 @@ Objective of this project is to create a custom and open source firmware based o
     - pulse lenght : 325 us
 
 ## Internal ESP8266 Pin
-![esp8266 pin](esp8266.jpg)
+<img src="esp8266.jpg" alt="drawing" width="300"/>
+
 - GPIO5 : RF receiver
 - GPIO4 : RF transmiter
 - GPIO0 : Status led 2 (RED)
@@ -35,7 +38,7 @@ Objective of this project is to create a custom and open source firmware based o
 - GPIO14, GPIO12, GPIO13 : Audio output (probably I2S protocol or pwm audio)
 
 Wofea board :
-![wofea_hw](wofea_hw.jpg) 
+<img src="wofea_hw.jpg" alt="drawing" width="600"/>
 
 ## Extract original firmware
 - Solder serial connector (see picture)
